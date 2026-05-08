@@ -1,0 +1,5 @@
+jwt:
+  secret: "12345"
+
+logging:
+  type: "prod"

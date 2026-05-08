@@ -1,0 +1,266 @@
+definitions:
+  dto.CreateEventRequest:
+    properties:
+      city:
+        type: string
+      creator_id:
+        minimum: 1
+        type: integer
+      desc:
+        type: string
+      event_time:
+        type: string
+      image_id:
+        type: integer
+      location:
+        $ref: '#/definitions/dto.EventLocation'
+      name:
+        maxLength: 100
+        minLength: 5
+        type: string
+      telegram_chat_url:
+        type: string
+    required:
+    - city
+    - creator_id
+    - event_time
+    - location
+    - name
+    type: object
+  dto.EventIDResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  dto.EventLocation:
+    properties:
+      address:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+      name:
+        type: string
+    required:
+    - address
+    - latitude
+    - longitude
+    - name
+    type: object
+  dto.EventResponse:
+    properties:
+      city:
+        type: string
+      created_at:
+        type: string
+      creator_id:
+        type: integer
+      deleted:
+        type: boolean
+      desc:
+        type: string
+      event_time:
+        type: string
+      id:
+        type: integer
+      image_id:
+        type: integer
+      location:
+        $ref: '#/definitions/dto.EventLocation'
+      members:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      telegram_chat_url:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.Msg:
+    properties:
+      msg:
+        type: string
+    type: object
+  dto.UpdateEventRequest:
+    properties:
+      city:
+        type: string
+      desc:
+        type: string
+      event_time:
+        type: string
+      id:
+        minimum: 1
+        type: integer
+      image_id:
+        type: integer
+      location:
+        $ref: '#/definitions/dto.EventLocation'
+      name:
+        maxLength: 100
+        minLength: 5
+        type: string
+      telegram_chat_url:
+        type: string
+    required:
+    - city
+    - event_time
+    - id
+    - location
+    - name
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/user/event:
+    post:
+      consumes:
+      - application/json
+      description: Creates new event with location
+      parameters:
+      - description: Event payload
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventIDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Msg'
+      summary: Create event
+      tags:
+      - events
+    put:
+      consumes:
+      - application/json
+      description: Updates event fields except created_at; sets updated_at on server
+      parameters:
+      - description: Event payload (id in body)
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Msg'
+      summary: Update event
+      tags:
+      - events
+  /api/v1/user/event/{id}:
+    delete:
+      description: Soft-deletes event (deleted = true)
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Msg'
+      summary: Delete event
+      tags:
+      - events
+    get:
+      description: Returns event by identifier
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.Msg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Msg'
+      summary: Get event by id
+      tags:
+      - events
+swagger: "2.0"
