@@ -70,6 +70,10 @@ function extractMessage(body: unknown, fallback: string): string {
   if (typeof body === 'string') return body || fallback;
   if (body && typeof body === 'object') {
     const candidate = body as Record<string, unknown>;
+    // The Go backend serializes errors as `dto.Msg` ({"msg": "..."}); other
+    // shapes are kept for resilience against handlers that don't follow the
+    // convention.
+    if (typeof candidate.msg === 'string') return candidate.msg;
     if (typeof candidate.message === 'string') return candidate.message;
     if (typeof candidate.error === 'string') return candidate.error;
     if (typeof candidate.detail === 'string') return candidate.detail;
