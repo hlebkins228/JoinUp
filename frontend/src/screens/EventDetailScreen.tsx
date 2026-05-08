@@ -76,10 +76,14 @@ export function EventDetailScreen({
   onAfterDelete,
 }: EventDetailScreenProps) {
   const { user } = useAuth();
-  const isNew = eventId === null;
   const [event, setEvent] = useState<EventResponse | null>(null);
+  // Tracks the id of an event that was created within this screen so that
+  // subsequent edits hit PUT instead of POST when the parent route still
+  // points at `eventId === null` ("event-new").
+  const [createdId, setCreatedId] = useState<number | null>(null);
+  const isNew = eventId === null && createdId === null;
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [editing, setEditing] = useState<boolean>(isNew);
+  const [editing, setEditing] = useState<boolean>(eventId === null);
   const [activeCats, setActiveCats] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -90,6 +94,7 @@ export function EventDetailScreen({
   useEffect(() => {
     if (eventId == null) {
       setEvent(null);
+      setCreatedId(null);
       setForm(EMPTY_FORM);
       setEditing(true);
       setActiveCats([]);
@@ -185,14 +190,16 @@ export function EventDetailScreen({
       };
 
       let nextId: number;
-      if (isNew) {
-        const created = await createEvent(payload);
-        nextId = created.id;
-      } else if (event) {
+      if (event) {
         nextId = event.id;
         await updateEvent({ ...payload, id: event.id });
+      } else if (createdId != null) {
+        nextId = createdId;
+        await updateEvent({ ...payload, id: createdId });
       } else {
-        return;
+        const created = await createEvent(payload);
+        nextId = created.id;
+        setCreatedId(created.id);
       }
 
       // Upload cover (only meaningful for new events; existing ones already
@@ -413,11 +420,12 @@ export function EventDetailScreen({
           type="button"
           className="btn btn-sm btn-ghost"
           onClick={() => {
-            if (isNew) onBack();
-            else if (event) {
+            if (event) {
               setEditing(false);
               setForm(eventToForm(event));
               setActiveCats([]);
+            } else {
+              onBack();
             }
           }}
         >

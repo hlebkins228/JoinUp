@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -35,6 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [user, setUser] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(!!token);
+  // The bootstrap effect should only fetch the user once for the token that
+  // was restored from localStorage. Subsequent transitions (signIn / signOut)
+  // manage `user` directly, so we skip the effect after the first run to
+  // avoid double-fetching when signIn calls setTokenState.
+  const bootstrapped = useRef(false);
 
   const loadUser = useCallback(async (rawToken: string) => {
     const payload = decodeJwt(rawToken);
@@ -57,6 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (bootstrapped.current) return;
+    bootstrapped.current = true;
     if (!token) {
       setLoading(false);
       return;
@@ -68,8 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(
     async (newToken: string) => {
       setToken(newToken);
+      setLoading(true);
+      try {
+        await loadUser(newToken);
+      } finally {
+        setLoading(false);
+      }
       setTokenState(newToken);
-      await loadUser(newToken);
     },
     [loadUser],
   );
