@@ -42,23 +42,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // avoid double-fetching when signIn calls setTokenState.
   const bootstrapped = useRef(false);
 
-  const loadUser = useCallback(async (rawToken: string) => {
+  // Returns `true` when the user was loaded for the given token. On any
+  // failure (expired token, rejected request) it cleans up persisted state
+  // and returns `false`, leaving the caller to decide what to do.
+  const loadUser = useCallback(async (rawToken: string): Promise<boolean> => {
     const payload = decodeJwt(rawToken);
     if (!payload || isExpired(payload)) {
       setToken(null);
       setTokenState(null);
       setUser(null);
-      return;
+      return false;
     }
     try {
       const fetched = await getUser(payload.UserID);
       setUser(fetched);
+      return true;
     } catch (err) {
-      // If the token is rejected the user is signed out by the API client.
       console.error('failed to load user', err);
       setToken(null);
       setTokenState(null);
       setUser(null);
+      return false;
     }
   }, []);
 
@@ -78,11 +82,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(newToken);
       setLoading(true);
       try {
-        await loadUser(newToken);
+        const ok = await loadUser(newToken);
+        // Only commit the token to React state when the user was actually
+        // loaded — otherwise loadUser has already cleared persistent state
+        // and we must not resurrect a failed token.
+        if (ok) setTokenState(newToken);
       } finally {
         setLoading(false);
       }
-      setTokenState(newToken);
     },
     [loadUser],
   );
